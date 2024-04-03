@@ -21,8 +21,25 @@ interface Attendee {
 }
 
 export const AttendeeList = () => {
-    const [searchInputValue, setSearchInputValue] = useState<string>('');
-    const [page, setPage] = useState<number>(1);
+
+    const [searchInputValue, setSearchInputValue] = useState<string>(() => {
+        const url = new URL(window.location.toString());
+
+        if (url.searchParams.has('search')) {
+            return url.searchParams.get('search') ?? '';
+        }
+        return '';
+    });
+    const [page, setPage] = useState<number>(() => {
+        //Setting inicial page according to url
+        const url = new URL(window.location.toString());
+
+        if (url.searchParams.has('page')) {
+            return Number(url.searchParams.get('page'));
+        }
+
+        return 1;
+    });
     const [attendees, setAttendees] = useState<Attendee[]>([]);
     const [total, setTotal] = useState<number>(0);
 
@@ -44,23 +61,49 @@ export const AttendeeList = () => {
             });
     }, [page, searchInputValue]);
 
+    const setCurrentSearch = (search: string) => {
+
+        const url = new URL(window.location.toString());
+
+        url.searchParams.set('search', search);
+
+        window.history.pushState({}, '', url);
+
+        setSearchInputValue(search);
+    }
+
+    const setCurrentPage = (page: number) => {
+
+        const url = new URL(window.location.toString());
+
+        url.searchParams.set('page', String(page));
+
+        window.history.pushState({}, '', url);
+
+        setPage(page);
+    }
+
     const onSearchInputChange = (event: ChangeEvent<HTMLInputElement>) => {
-        setSearchInputValue(event.target.value);
-        setPage(1);
+        setCurrentSearch(event.target.value);
+
+        //Going back to first page
+        setCurrentPage(1)
     };
 
-    const returnPage = () => {
-        if (page > 1) {
-            setPage(currentPage => currentPage - 1)
-        }
-        return
+    const goToPreviousPage = () => {
+        setCurrentPage(page - 1);
     };
 
-    const nextPage = () => {
-        if (page < total / 10) {
-            setPage(currentPage => currentPage + 1)
-        }
-        return
+    const goToNextPage = () => {
+        setCurrentPage(page + 1);
+    };
+
+    const goToFirstPage = () => {
+        setCurrentPage(1)
+    }
+
+    const goToLastPage = () => {
+        setCurrentPage(Math.ceil(total / 10));
     };
 
     return (
@@ -70,6 +113,7 @@ export const AttendeeList = () => {
                 <div className="w-72 px-3 py-1.5 border border-white/10 rounded-lg text-sm flex items-center gap-3">
                     <Search className="size-4 text-emerald-300" />
                     <input
+                        value={searchInputValue}
                         onChange={onSearchInputChange}
                         className="bg-transparent flex-1 text-sm border-0 p-0 focus:ring-0"
                         placeholder="Buscar participante..." />
@@ -122,16 +166,16 @@ export const AttendeeList = () => {
                             <div className="inline-flex items-center gap-8">
                                 <span>Página {page} de {Math.ceil(total / 10)}</span>
                                 <div className="flex gap-1.5">
-                                    <IconButton onClick={() => setPage(1)} disabled={page === 1}>
+                                    <IconButton onClick={goToFirstPage} disabled={page === 1}>
                                         <ChevronsLeft className="size-4" />
                                     </IconButton>
-                                    <IconButton onClick={returnPage} disabled={page === 1}>
+                                    <IconButton onClick={goToPreviousPage} disabled={page === 1}>
                                         <ChevronLeft className="size-4" />
                                     </IconButton>
-                                    <IconButton onClick={nextPage} disabled={page === Math.ceil(total / 10)}>
+                                    <IconButton onClick={goToNextPage} disabled={page === Math.ceil(total / 10)}>
                                         <ChevronRight className="size-4" />
                                     </IconButton>
-                                    <IconButton onClick={() => setPage(Math.ceil(total / 10))} disabled={page === Math.ceil(total / 10)}>
+                                    <IconButton onClick={goToLastPage} disabled={page === Math.ceil(total / 10)}>
                                         <ChevronsRight className="size-4" />
                                     </IconButton>
                                 </div>
