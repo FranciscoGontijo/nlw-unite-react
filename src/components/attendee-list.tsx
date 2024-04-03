@@ -27,17 +27,26 @@ export const AttendeeList = () => {
     const [total, setTotal] = useState<number>(0);
 
     useEffect(() => {
-        fetch(`http://localhost:3333/events/9e9bd979-9d10-4915-b339-3786b1634f33/attendees?pageIndex=${page - 1}`)
+        const url = new URL("http://localhost:3333/events/9e9bd979-9d10-4915-b339-3786b1634f33/attendees");
+
+        url.searchParams.set('pageIndex', String(page - 1));
+
+        if (searchInputValue.length > 0) {
+            url.searchParams.set('query', searchInputValue);
+        }
+
+        fetch(url)
             .then(response => response.json())
             .then(data => {
                 console.log(data);
                 setAttendees(data.attendees);
                 setTotal(data.total);
             });
-    }, [page]);
+    }, [page, searchInputValue]);
 
     const onSearchInputChange = (event: ChangeEvent<HTMLInputElement>) => {
         setSearchInputValue(event.target.value);
+        setPage(1);
     };
 
     const returnPage = () => {
@@ -60,7 +69,10 @@ export const AttendeeList = () => {
                 <h1 className="text-2xl font-bold">Participantes</h1>
                 <div className="w-72 px-3 py-1.5 border border-white/10 rounded-lg text-sm flex items-center gap-3">
                     <Search className="size-4 text-emerald-300" />
-                    <input onChange={onSearchInputChange} className="bg-transparent flex-1 outline-none text-sm border-0 p-0" placeholder="Buscar participante..." />
+                    <input
+                        onChange={onSearchInputChange}
+                        className="bg-transparent flex-1 text-sm border-0 p-0 focus:ring-0"
+                        placeholder="Buscar participante..." />
                 </div>
             </div>
             <Table>
@@ -92,7 +104,7 @@ export const AttendeeList = () => {
                                 </TableCell>
                                 <TableCell>{dayjs(attendee.createdAt).fromNow()}</TableCell>
                                 <TableCell>{attendee.checkedInAt
-                                    ? dayjs(attendee.checkedInAt).fromNow() 
+                                    ? dayjs(attendee.checkedInAt).fromNow()
                                     : <span className="text-zinc-400">Não fez check-in</span>}</TableCell>
                                 <TableCell>
                                     <IconButton transparent>
@@ -105,7 +117,7 @@ export const AttendeeList = () => {
                 </tbody>
                 <tfoot>
                     <tr>
-                        <TableCell colSpan={3}>Mostrando 10 de {total}</TableCell>
+                        <TableCell colSpan={3}>Mostrando {attendees.length} de {total}</TableCell>
                         <TableCell className="text-right" colSpan={3}>
                             <div className="inline-flex items-center gap-8">
                                 <span>Página {page} de {Math.ceil(total / 10)}</span>
